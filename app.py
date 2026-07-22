@@ -1,9 +1,12 @@
 from flask import Flask, jsonify, request, make_response
+from flask_cors import CORS
 import requests
 
 app = Flask(__name__)
+CORS(app)
 
 OFF_BASE_URL = "https://world.openfoodfacts.org"
+HEADERS = {"User-Agent": "InventoryApp/1.0 (student project)"}
 
 
 INVENTORY = [
@@ -49,30 +52,41 @@ def find_item(item_id):
 def fetch_off_product(barcode):
     """Query OpenFoodFacts by barcode, return dict or None."""
     try:
-        resp = requests.get(f"{OFF_BASE_URL}/api/v0/product/{barcode}.json")
+        resp = requests.get(
+            f"{OFF_BASE_URL}/api/v2/product/{barcode}.json",
+            headers=HEADERS,
+            timeout=5
+        )
         resp.raise_for_status()
         data = resp.json()
         if data.get("status") == 1:
             return data.get("product")
         return None
-    except requests.RequestException:
+    except requests.RequestException as e:
+        print("FETCH_OFF_PRODUCT ERROR:", e)
         return None
 
 
-def search_off_products(name):
+def search_off_products(name, page_size=5):
     """Search OpenFoodFacts by product name, return list of products."""
     try:
         resp = requests.get(
-            f"{OFF_BASE_URL}/cgi/search.pl"
-        f"?search_terms={name}"
-        f"&search_simple=1"
-        f"&action=process"
-        f"&json=1"
+            f"{OFF_BASE_URL}/cgi/search.pl",
+            params={
+                "search_terms": name,
+                "search_simple": 1,
+                "action": "process",
+                "json": 1,
+                "page_size": page_size
+            },
+            headers=HEADERS,
+            timeout=5
         )
         resp.raise_for_status()
         data = resp.json()
         return data.get("products", [])
-    except requests.RequestException:
+    except requests.RequestException as e:
+        print("SEARCH_OFF_PRODUCTS ERROR:", e)
         return []
 
 
