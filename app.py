@@ -3,7 +3,7 @@ import requests
 
 app = Flask(__name__)
 
-OFF_BASE_URL = "https://world.openfoodfacts.org/api/v2"
+OFF_BASE_URL = "https://world.openfoodfacts.org"
 
 
 INVENTORY = [
@@ -49,7 +49,7 @@ def find_item(item_id):
 def fetch_off_product(barcode):
     """Query OpenFoodFacts by barcode, return dict or None."""
     try:
-        resp = requests.get(f"{OFF_BASE_URL}/product/{barcode}.json", timeout=5)
+        resp = requests.get(f"{OFF_BASE_URL}/api/v0/product/{barcode}.json")
         resp.raise_for_status()
         data = resp.json()
         if data.get("status") == 1:
@@ -59,19 +59,15 @@ def fetch_off_product(barcode):
         return None
 
 
-def search_off_products(name, page_size=5):
+def search_off_products(name):
     """Search OpenFoodFacts by product name, return list of products."""
     try:
         resp = requests.get(
-            "https://world.openfoodfacts.org/cgi/search.pl",
-            params={
-                "search_terms": name,
-                "search_simple": 1,
-                "action": "process",
-                "json": 1,
-                "page_size": page_size
-            },
-            timeout=5
+            f"{OFF_BASE_URL}/cgi/search.pl"
+        f"?search_terms={name}"
+        f"&search_simple=1"
+        f"&action=process"
+        f"&json=1"
         )
         resp.raise_for_status()
         data = resp.json()
